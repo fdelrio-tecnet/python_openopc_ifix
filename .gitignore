@@ -1,0 +1,150 @@
+# ============================================================
+# Entornos virtuales de Python
+# ============================================================
+venv/
+.venv/
+env/
+ENV/
+virtualenv/
+
+# ============================================================
+# Python: caché y archivos compilados
+# ============================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+*.so
+
+# ============================================================
+# PyCharm / IntelliJ IDEA
+# ============================================================
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# ============================================================
+# Variables de entorno y credenciales
+# ============================================================
+.env
+.env.*
+!.env.example
+
+# Archivos locales de configuración
+config.local.py
+settings.local.py
+secrets.py
+credentials.json
+
+# ============================================================
+# Logs y archivos generados por la aplicación
+# ============================================================
+*.log
+logs/
+log/
+output/
+outputs/
+tmp/
+temp/
+
+# ============================================================
+# Archivos temporales y copias de seguridad
+# ============================================================
+*.tmp
+*.temp
+*.bak
+*.backup
+*.swp
+*.swo
+*~
+~$*
+
+# ============================================================
+# Pruebas, cobertura y herramientas de análisis
+# ============================================================
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+
+# ============================================================
+# Empaquetado y distribución de Python
+# ============================================================
+build/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ============================================================
+# Jupyter Notebook
+# ============================================================
+.ipynb_checkpoints/
+
+# ============================================================
+# OpenOPC / OPC
+# ============================================================
+# Logs o datos capturados durante las consultas OPC
+opc_logs/
+opc_data/
+opc_output/
+openopc/
+
+# Configuración particular de cada equipo
+openopc.local.ini
+opc.local.ini
+opc_servers.local.json
+
+# ============================================================
+# Windows
+# ============================================================
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# ============================================================
+# macOS
+# ============================================================
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ============================================================
+# Visual Studio Code, si se usa ocasionalmente
+# ============================================================
+.vscode/
+
+# ============================================================
+# Bases de datos locales
+# ============================================================
+*.sqlite
+*.sqlite3
+*.db
+
+# ============================================================
+# Archivos generados del proyecto
+# Ajustar según los directorios reales
+# ============================================================
+data/generated/
+reports/generated/
+exports/
