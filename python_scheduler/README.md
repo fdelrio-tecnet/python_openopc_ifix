@@ -1,5 +1,13 @@
 # Sistema de Cálculo de Linepack para iFIX
 
+> Alcance de este documento: módulos existentes de cálculo y OPC DA. El punto de
+> entrada continúa como stub; no hay servicio completo ejecutable. La arquitectura
+> objetivo ahora utiliza SQLite compartido y un servidor OPC UA propio, aún no
+> implementados. Consultar el [README principal](../README.md) y el
+> [flujo actualizado](../docs/arquitectura.md) como fuentes del estado general.
+> Las descripciones de publicación directa en iFIX de este documento corresponden
+> a las funciones OPC DA existentes, no a la integración futura SQLite/UA.
+
 ## Objetivo
 
 Este programa calcula y publica en iFIX:
@@ -51,6 +59,29 @@ No realiza:
 - lógica de ejecución.
 
 Su única responsabilidad es transformar el JSON en una estructura consistente y validada.
+
+El JSON compartido se conserva sin cambios. El parser reúne tramos de
+`sistemas[...].tramos` y de `sistemas[...].subsistemas[...].tramos` en un
+diccionario plano indexado por ID. Un sistema puede contener cualquiera de
+las dos colecciones o ambas; las colecciones vacías son válidas.
+`sistemas` es un objeto, mientras que `subsistemas` y `tramos` son listas.
+Los subsistemas deben contener la clave `tramos`.
+
+Los IDs duplicados se rechazan globalmente después de quitar espacios
+externos. También se rechazan salidas OPC duplicadas (incluidas las
+predictivas), comparadas sin distinguir mayúsculas. Las entradas compartidas
+entre tramos están permitidas. Los campos adicionales del JSON se ignoran.
+
+Las pruebas del parser verifican ambas ubicaciones, validaciones, tags,
+72 puntos predictivos y estados independientes. Se ejecutan desde la raíz
+del repositorio, sin OpenOPC ni iFIX, usando la biblioteca estándar:
+
+```console
+python -m unittest discover -s tests -p test_parse_config_json.py -v
+```
+
+Este comando selecciona únicamente las pruebas del parser; los otros
+archivos `test_*_ifix.py` son programas manuales que requieren OpenOPC.
 
 ---
 
@@ -506,6 +537,32 @@ Esto evita perder una predicción cuando la escritura falla.
 
 # Manejo de errores
 
+Las lecturas actuales y predictivas exigen calidad `Good` por defecto.
+Se puede pasar `exigir_calidad_good=False` para aceptar otras calidades;
+esa opción no permite valores no numéricos, booleanos, NaN o infinitos.
+La política se configura al llamar a las funciones, sin modificar el JSON
+compartido de tramos.
+
+La cantidad predictiva se centraliza en `constantes.py` como
+`CANTIDAD_PUNTOS_PREDICCION = 72`. El parser mantiene disponible ese nombre
+por compatibilidad. Lectura, cálculo y escritura usan la misma constante;
+el cálculo no depende del parser JSON ni de OpenOPC.
+
+Antes de cada lectura predictiva se limpian presiones y linepacks,
+`calculada`, timestamps, firma pendiente y estado de escritura, conservando
+`ultima_firma`. Así, incluso una excepción global no deja resultados de un
+ciclo anterior disponibles como actuales. Si no hay cambio, no se calcula
+ni escribe y `calculada` permanece en False. Una lectura incompleta invalida
+la serie; un error matemático de un punto permite calcular los otros 71,
+pero nunca marca la serie como completamente calculada.
+
+Las pruebas integradas usan un cliente falso para el flujo completo,
+calidades, valores no finitos, 72 puntos, cambios en los extremos y reintentos:
+
+```console
+python -m unittest discover -s tests -p test_ciclo_opc.py -v
+```
+
 La estrategia elegida es:
 
 ```text
@@ -770,6 +827,35 @@ Esto reduce la cantidad de operaciones cuando existen cambios tempranos en la se
 
 # Escrituras predictivas
 
+La escritura valida exactamente 72 puntos, 72 tags correspondientes a
+`F_00`–`F_71` y una firma pendiente de 72 posiciones. Los linepacks deben
+ser numéricos finitos. `tamano_lote` permite dividir cada tramo en llamadas
+de tamaño limitado; `None` envía los 72 puntos juntos.
+
+Cada lote debe devolver una única respuesta `Success` por tag enviado.
+Se toleran diferencias de orden y mayúsculas. Las respuestas faltantes,
+duplicadas, desconocidas, malformadas o `Error` impiden consolidar la firma.
+Una respuesta de otro lote no completa un resultado faltante.
+Los errores de respuesta se registran y se continúa con los demás tramos;
+las excepciones de `opc.write()` se propagan al coordinador.
+
+`puntos_exitosos` cuenta tags confirmados una sola vez; `puntos_fallidos`
+cuenta los puntos enviados que no quedaron confirmados, incluidos faltantes
+y ambiguos. Una respuesta extra puede invalidar el intento incluso con
+72 puntos confirmados y cero puntos fallidos: el detalle queda en `error`.
+Si falla una llamada, los puntos todavía no confirmados también se cuentan
+como fallidos, sin afirmar que el servidor no los haya escrito.
+
+Ante un intento incompleto se conserva `ultima_firma`, la firma pendiente
+y el cambio detectado, para reintentar los 72 puntos en el próximo ciclo.
+Esta confirmación indica aceptación OPC; no incluye readback.
+
+Pruebas con cliente falso, sin OpenOPC ni iFIX, desde la raíz:
+
+```console
+python -m unittest discover -s tests -p test_escritura_predicciones.py -v
+```
+
 La escritura predictiva posee una condición adicional.
 
 No alcanza con que exista una nueva lectura.
@@ -1020,4 +1106,6 @@ El trabajo pendiente se concentra principalmente en la capa de ejecución:
 - logging;
 - pruebas en entorno real.
 
-La arquitectura base se considera definida y operativa.
+Las funciones base están implementadas y verificadas con clientes falsos. La
+integración operativa y la nueva arquitectura SQLite/OPC UA permanecen pendientes;
+ver el [estado del proyecto](../README.md).
