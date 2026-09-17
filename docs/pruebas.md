@@ -25,9 +25,14 @@ el módulo con OpenOPC falso; no abren conexiones reales.
 de sintaxis Python 3.9. No es validación del runtime Python 3.9 x86 ni de COM.
 El número es una referencia de esa entrega: actualizar al cambiar la suite.
 
-No usar descubrimiento indiscriminado de `test_*.py` como prueba offline:
-`test_lectura_ifix.py` y `test_calculos_ifix.py` son programas manuales que importan
-OpenOPC; el segundo escribe resultados. No ejercitan el nuevo flujo SQLite/UA.
+Los programas manuales se encuentran en
+[`herramientas/manuales/`](../herramientas/manuales/README.md), fuera de `tests/`.
+Requieren OpenOPC real y uno escribe resultados. No ejercitan el flujo SQLite/UA.
+Para ejecutar toda la suite automática desde la raíz:
+
+```console
+python -m unittest discover -s tests -v
+```
 
 ## Próxima etapa: almacenamiento e importaciones
 

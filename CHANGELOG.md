@@ -2,6 +2,17 @@
 
 ## Sin versión publicada
 
+### Limpieza y organización
+
+- Retiradas las capturas obsoletas `arbol_ifix.json`, `arbol_ifix.txt`, `tags.txt`
+  y registrada la eliminación preexistente de `python_scheduler.zip`. Se pueden
+  recuperar desde el historial Git.
+- Movidos los ensayos OPC reales de `tests/` a `herramientas/manuales/`, con nombres
+  que no se descubren como pruebas automáticas y una guía de sus efectos.
+- Movida la guía histórica OpenOPC a `docs/referencias/`; enlaces actualizados.
+- La suite completa puede descubrirse en `tests/` sin importar OpenOPC real.
+- Entornos y recursos locales ignorados (`.venv`, `.idea`, `openopc/`) conservados.
+
 ### Base documental — 2026-09-17
 
 - Incorporados README principal, reglas de mantenimiento y documentos de

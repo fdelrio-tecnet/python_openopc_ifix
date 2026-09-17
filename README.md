@@ -37,10 +37,12 @@ No hay todavía un comando que arranque el sistema completo.
 ## Código y referencias existentes
 
 - [`python_scheduler/`](python_scheduler/README.md): parser, cálculos y comunicación OPC DA.
-- [`tests/`](docs/pruebas.md): pruebas automáticas y programas manuales de integración.
-- [Guía original de instalación OpenOPC](instalacion_openopc.md): antecedentes de la instalación validada en otro entorno.
-- `tags.txt`, `arbol_ifix.json` y `arbol_ifix.txt`: capturas históricas de exploración,
-  no contratos completos ni evidencia del estado actual de iFIX.
+- [`tests/`](docs/pruebas.md): pruebas automáticas sin iFIX.
+- [Herramientas manuales](herramientas/manuales/README.md): ensayos históricos con iFIX real.
+- [Guía original de instalación OpenOPC](docs/referencias/instalacion_openopc.md): antecedentes de la instalación validada en otro entorno.
+
+Las capturas históricas `tags.txt`, `arbol_ifix.json`, `arbol_ifix.txt` y la copia
+`python_scheduler.zip` se retiraron del árbol activo; permanecen recuperables en Git.
 
 El JSON compartido de tramos pertenece a otro proyecto y no se modifica.
 No está incluido en este repositorio. La ruta de despliegue será configurable.

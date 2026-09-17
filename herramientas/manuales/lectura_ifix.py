@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+"""Ensayo manual contra iFIX real; consulte README.md de este directorio."""
+
 import time
 from datetime import datetime
 

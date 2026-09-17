@@ -1,6 +1,6 @@
 # Instalación y entornos
 
-[Inicio](../README.md) · [Guía original OpenOPC](../instalacion_openopc.md)
+[Inicio](../README.md) · [Guía original OpenOPC](referencias/instalacion_openopc.md)
 
 ## Estado y destino
 
@@ -19,7 +19,7 @@ procesos propios bajo el mismo usuario. No se requiere comunicación HTTP ni pip
 - Servidor local `Intellution.OPCiFIX.1`.
 - Entorno iFIX informado: iFIX 2023 v7 build 9737 e IGS 7.614.263.
 
-La [guía original](../instalacion_openopc.md) conserva pasos y versiones observadas.
+La [guía original](referencias/instalacion_openopc.md) conserva pasos y versiones observadas.
 Revisar qué partes aplican: NumPy/Pandas aparecen en ella pero no son dependencias
 del código de cálculo actual. No ejecutar registros COM o instalaciones globales
 como parte de una prueba unitaria.

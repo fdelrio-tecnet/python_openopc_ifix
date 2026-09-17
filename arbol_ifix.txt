@@ -1,5 +1,0 @@
-Servidor OPC: Intellution.OPCiFIX.1
-Host: localhost
-======================================================================
-Intellution.OPCiFIX.1
-

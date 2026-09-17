@@ -1,5 +1,8 @@
 # Instalación y puesta en marcha de OpenOPC con iFIX
 
+Referencia histórica. Consulte la [guía vigente de entornos](../instalacion.md)
+y las [herramientas manuales](../../herramientas/manuales/README.md).
+
 ## Objetivo
 
 Esta guía documenta los pasos que se utilizaron correctamente para instalar y configurar **OpenOPC-DA** en un entorno con:

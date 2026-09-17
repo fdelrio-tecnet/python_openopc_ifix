@@ -80,8 +80,9 @@ del repositorio, sin OpenOPC ni iFIX, usando la biblioteca estándar:
 python -m unittest discover -s tests -p test_parse_config_json.py -v
 ```
 
-Este comando selecciona únicamente las pruebas del parser; los otros
-archivos `test_*_ifix.py` son programas manuales que requieren OpenOPC.
+Este comando selecciona únicamente las pruebas del parser. Los programas de
+ensayo con iFIX real están separados en
+[`herramientas/manuales/`](../herramientas/manuales/README.md).
 
 ---
 
