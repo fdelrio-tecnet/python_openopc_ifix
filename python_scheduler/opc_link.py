@@ -4,6 +4,11 @@ from typing import Any, Dict, Iterable, List, Optional
 import math
 import OpenOPC
 
+if __package__:
+    from .constantes import CANTIDAD_PUNTOS_PREDICCION
+else:
+    from constantes import CANTIDAD_PUNTOS_PREDICCION
+
 
 # Campos que contienen tags de entrada.
 CAMPOS_ENTRADA = (
@@ -499,16 +504,22 @@ def escribir_predicciones_tramos(
     tamano_lote=None,
 ):
     """
-    Escribe los 72 valores de LINEPACK_PRED.
-
-    Si todas las escrituras resultan exitosas:
-
-        firma_pendiente -> ultima_firma
-
-    y se limpia cambio_detectado.
+    Escribe los puntos predictivos y confirma una respuesta Success única
+    por cada tag enviado, dentro de su lote. Las anomalías de respuesta
+    impiden consolidar la firma, pero no detienen los otros tramos.
+    Una excepción de opc.write se propaga para permitir la reconexión.
+    Esta confirmación no implica readback ni persistencia en iFIX.
     """
 
+    if tamano_lote is not None and (
+        isinstance(tamano_lote, bool)
+        or not isinstance(tamano_lote, int)
+        or tamano_lote <= 0
+    ):
+        raise ValueError("tamano_lote debe ser un entero positivo o None.")
+
     momento = datetime.now()
+    cantidad = CANTIDAD_PUNTOS_PREDICCION
 
     for tramo in tramos.values():
 
@@ -531,79 +542,100 @@ def escribir_predicciones_tramos(
             )
             continue
 
-        escrituras = []
+        escritura = prediccion["escritura"]
+        try:
+            puntos = prediccion["puntos"]
+            tags = tramo["tags"]["linepack_pred"]
+            firma = prediccion["firma_pendiente"]
+            if not isinstance(puntos, list) or len(puntos) != cantidad:
+                raise ValueError(f"Se requieren exactamente {cantidad} puntos.")
+            if not isinstance(tags, list) or len(tags) != cantidad:
+                raise ValueError(f"Se requieren exactamente {cantidad} tags de salida.")
+            if not isinstance(firma, tuple) or len(firma) != cantidad:
+                raise ValueError(f"Se requiere una firma pendiente de {cantidad} puntos.")
 
-        for indice, punto in enumerate(
-            prediccion["puntos"]
-        ):
-
-            if not punto["valido"]:
-                prediccion["escritura"]["error"] = (
-                    f"Punto inválido: {indice}"
-                )
-
-                escrituras = []
-                break
-
-            tag = tramo["tags"][
-                "linepack_pred"
-            ][indice]
-
-            valor = round(
-                float(punto["linepack"]),
-                DECIMALES_LINEPACK,
-            )
-
-            escrituras.append(
-                (
-                    tag,
-                    valor,
-                )
-            )
-
-        if not escrituras:
+            escrituras = []
+            unicos = set()
+            for indice, (punto, tag) in enumerate(zip(puntos, tags)):
+                campo = f"F_{indice:02d}"
+                if not isinstance(punto, dict) or not punto.get("valido"):
+                    raise ValueError(f"Punto inválido: {indice}.")
+                if punto.get("indice") != indice or punto.get("campo") != campo:
+                    raise ValueError(f"Índice/campo inconsistente en el punto {indice}.")
+                if not isinstance(tag, str) or not tag.strip():
+                    raise ValueError(f"Tag inválido en el punto {indice}.")
+                tag = tag.strip()
+                esperado = f"FIX.{tramo['base_tag']}_LINEPACK_PRED.{campo}"
+                clave = _normalizar_nombre_tag(tag)
+                if clave != _normalizar_nombre_tag(esperado):
+                    raise ValueError(f"Tag no corresponde al punto {indice}: '{tag}'.")
+                if clave in unicos:
+                    raise ValueError(f"Tag de salida duplicado: '{tag}'.")
+                unicos.add(clave)
+                valor = punto.get("linepack")
+                if not _es_valor_numerico(valor) or not math.isfinite(float(valor)):
+                    raise ValueError(f"Linepack inválido en el punto {indice}: {valor!r}.")
+                escrituras.append((tag, round(float(valor), DECIMALES_LINEPACK)))
+        except (KeyError, TypeError, ValueError, OverflowError) as error:
+            escritura["error"] = f"No se escribió la predicción: {error}"
             continue
 
-        respuestas = opc.write(escrituras)
-
+        errores = []
         exitosos = 0
-        fallidos = 0
+        for lote in _dividir_en_lotes(escrituras, tamano_lote):
+            esperados = {_normalizar_nombre_tag(tag): tag for tag, _ in lote}
+            recibidos = {clave: [] for clave in esperados}
+            try:
+                respuestas = opc.write(lote)
+            except Exception as error:
+                escritura["puntos_exitosos"] = exitosos
+                escritura["puntos_fallidos"] = cantidad - exitosos
+                escritura["error"] = f"Falla global de escritura OPC: {error}"
+                raise
 
-        for respuesta in respuestas:
+            # OpenOPC devuelve una lista incluso para un lote de un item.
+            # Se admite también la respuesta escalar de escritura individual.
+            if len(lote) == 1 and isinstance(respuestas, str):
+                respuestas = [(lote[0][0], respuestas)]
+            elif (len(lote) == 1 and isinstance(respuestas, (list, tuple))
+                  and len(respuestas) == 2 and isinstance(respuestas[0], str)):
+                respuestas = [respuestas]
+            if not isinstance(respuestas, (list, tuple)):
+                errores.append("Formato inválido de respuestas OPC.")
+                respuestas = []
+            for respuesta in respuestas:
+                if (not isinstance(respuesta, (list, tuple)) or len(respuesta) != 2
+                        or not isinstance(respuesta[0], str)):
+                    errores.append(f"Respuesta OPC inválida: {respuesta!r}.")
+                    continue
+                tag, resultado = respuesta
+                clave = _normalizar_nombre_tag(tag)
+                if clave not in esperados:
+                    errores.append(f"Respuesta de tag ajeno al lote: '{tag}'.")
+                    continue
+                recibidos[clave].append(resultado)
 
-            tag, resultado = respuesta
-
-            if _es_resultado_escritura_exitoso(
-                resultado
-            ):
-                exitosos += 1
-            else:
-                fallidos += 1
-
-        escritura = prediccion["escritura"]
+            for clave, resultados in recibidos.items():
+                tag = esperados[clave]
+                if not resultados:
+                    errores.append(f"Sin respuesta: '{tag}'.")
+                elif len(resultados) != 1:
+                    errores.append(f"Respuesta duplicada: '{tag}'.")
+                elif not _es_resultado_escritura_exitoso(resultados[0]):
+                    errores.append(f"Error de escritura '{tag}': {resultados[0]!r}.")
+                else:
+                    exitosos += 1
 
         escritura["puntos_exitosos"] = exitosos
-        escritura["puntos_fallidos"] = fallidos
-
-        if fallidos == 0:
-
+        # Incluye puntos faltantes, ambiguos o rechazados, no respuestas extra.
+        escritura["puntos_fallidos"] = cantidad - exitosos
+        if exitosos == cantidad and not errores:
             escritura["exitosa"] = True
-
-            prediccion["ultima_firma"] = (
-                prediccion["firma_pendiente"]
-            )
-
+            prediccion["ultima_firma"] = firma
             prediccion["firma_pendiente"] = None
-
             prediccion["cambio_detectado"] = False
-
         else:
-
-            escritura["exitosa"] = False
-
-            escritura["error"] = (
-                f"Fallaron {fallidos} escrituras."
-            )
+            escritura["error"] = " ".join(errores)
 
     return tramos
 
@@ -624,16 +656,16 @@ def _calidad_es_buena(calidad: Any) -> bool:
 
 def _es_valor_numerico(valor: Any) -> bool:
     """
-    Determina si un valor puede utilizarse como número.
+    Determina si un valor es numérico, finito y representable como float.
 
     bool se excluye explícitamente porque en Python es una subclase
     de int, pero no debe tratarse como un valor analógico.
     """
 
-    return (
-        isinstance(valor, Real)
-        and not isinstance(valor, bool)
-    )
+    try:
+        return isinstance(valor, Real) and not isinstance(valor, bool) and math.isfinite(float(valor))
+    except (ValueError, OverflowError):
+        return False
 
 def _valor_firma_prediccion(
     valor: float,
@@ -873,7 +905,7 @@ def _obtener_resultado_tag(
 def leer_datos_tramos(
     opc: Any,
     tramos: Dict[str, Dict[str, Any]],
-    exigir_calidad_good: bool = False,
+    exigir_calidad_good: bool = True,
     tamano_lote: Optional[int] = None,
 ) -> Dict[str, Dict[str, Any]]:
     """
@@ -902,7 +934,7 @@ def leer_datos_tramos(
         Diccionario creado por cargar_estructura_tramos().
 
     exigir_calidad_good:
-        Si es True, un tag cuya calidad no comience con "Good"
+        Por defecto True: un tag cuya calidad no comience con "Good"
         invalida el tramo.
 
         Si es False, se acepta el valor siempre que sea numérico,
@@ -967,6 +999,7 @@ def leer_datos_tramos(
             )
 
         _reiniciar_datos_entrada(tramo)
+        _reiniciar_estado_escritura(tramo)
 
     # --------------------------------------------------------
     # 2. Obtener todos los tags únicos
@@ -1064,26 +1097,57 @@ def leer_datos_tramos(
 def leer_predicciones_tramos(
     opc,
     tramos,
-    exigir_calidad_good=False,
+    exigir_calidad_good=True,
     tamano_lote=None,
 ):
     """
     Lee los 72 valores de PPROMEDIO_PRED de todos los tramos
     y determina si existen cambios respecto de la última
     predicción procesada.
+
+    Exige Good por defecto; puede desactivarse con exigir_calidad_good=False.
+    Invalida los resultados derivados antes de leer y conserva ultima_firma.
+    Una lectura sin cambios deja calculada=False: no hay cálculo nuevo.
     """
 
-    tags_lectura = []
-
+    tags_unicos = {}
+    tramos_validos = []
+    # Invalidar resultados antes de OPC, incluso si la llamada global falla.
     for tramo in tramos.values():
-
-        for tag in tramo["tags"]["ppromedio_pred"]:
-            tags_lectura.append(tag)
-
-    tags_lectura = sorted(
-        set(tags_lectura),
-        key=str.casefold,
-    )
+        prediccion = tramo["datos"]["prediccion"]
+        prediccion.update(cambio_detectado=False, firma_pendiente=None,
+                          calculada=False, timestamp_calculo=None,
+                          timestamp_lectura=None, error=None)
+        _reiniciar_estado_escritura_prediccion(tramo)
+        puntos = prediccion.get("puntos")
+        if isinstance(puntos, list):
+            for punto in puntos:
+                if isinstance(punto, dict):
+                    punto.update(presion_promedio=None, linepack=None,
+                                 valido=False, error=None)
+        tags = tramo.get("tags", {}).get("ppromedio_pred")
+        if (not isinstance(puntos, list) or len(puntos) != CANTIDAD_PUNTOS_PREDICCION
+                or not isinstance(tags, list) or len(tags) != CANTIDAD_PUNTOS_PREDICCION):
+            prediccion["error"] = "Se requieren exactamente 72 puntos y tags predictivos."
+            continue
+        if any(not isinstance(p, dict) or p.get("indice") != i
+               or p.get("campo") != f"F_{i:02d}" for i, p in enumerate(puntos)):
+            prediccion["error"] = "Índice/campo predictivo inconsistente."
+            continue
+        if any(not isinstance(t, str) or not t.strip() for t in tags):
+            prediccion["error"] = "Tag predictivo inválido."
+            continue
+        claves = [_normalizar_nombre_tag(t) for t in tags]
+        if len(set(claves)) != CANTIDAD_PUNTOS_PREDICCION or any(
+            not clave.endswith(f"_ppromedio_pred.f_{i:02d}")
+            for i, clave in enumerate(claves)
+        ):
+            prediccion["error"] = "Tags predictivos duplicados o fuera de orden."
+            continue
+        tramos_validos.append(tramo)
+        for clave, tag in zip(claves, tags):
+            tags_unicos.setdefault(clave, tag.strip())
+    tags_lectura = sorted(tags_unicos.values(), key=str.casefold)
 
     resultados_por_tag = _leer_tags_opc(
         opc=opc,
@@ -1093,7 +1157,7 @@ def leer_predicciones_tramos(
 
     momento_ciclo = datetime.now()
 
-    for tramo in tramos.values():
+    for tramo in tramos_validos:
 
         prediccion = tramo["datos"]["prediccion"]
         puntos = prediccion["puntos"]
@@ -1166,11 +1230,11 @@ def leer_predicciones_tramos(
             )
             continue
 
-        firma_nueva = (
-            _construir_firma_prediccion(
-                valores_firma
-            )
-        )
+        try:
+            firma_nueva = _construir_firma_prediccion(valores_firma)
+        except (ValueError, OverflowError) as error:
+            prediccion["error"] = f"No se pudo construir la firma: {error}"
+            continue
 
         prediccion["firma_pendiente"] = firma_nueva
 

@@ -3,6 +3,12 @@
 from datetime import datetime
 from numbers import Real
 from typing import Any, Dict
+import math
+
+if __package__:
+    from .constantes import CANTIDAD_PUNTOS_PREDICCION
+else:
+    from constantes import CANTIDAD_PUNTOS_PREDICCION
 
 
 # ============================================================
@@ -56,10 +62,10 @@ def _es_numero_valido(valor: Any) -> bool:
         True si el valor es numérico y no es booleano.
     """
 
-    return (
-        isinstance(valor, Real)
-        and not isinstance(valor, bool)
-    )
+    try:
+        return isinstance(valor, Real) and not isinstance(valor, bool) and math.isfinite(float(valor))
+    except (ValueError, OverflowError):
+        return False
 
 
 def _obtener_numero_positivo(
@@ -248,7 +254,7 @@ def calcular_presion_promedio_bar_abs(
 
     presion_promedio = numerador / denominador
 
-    if presion_promedio <= 0:
+    if not _es_numero_valido(presion_promedio) or presion_promedio <= 0:
         raise ValueError(
             "La presión promedio calculada no es válida. "
             f"Resultado: {presion_promedio} bar abs."
@@ -315,7 +321,7 @@ def calcular_diametro_interno_metros(
         - 2.0 * espesor_metros
     )
 
-    if diametro_interno_metros <= 0:
+    if not _es_numero_valido(diametro_interno_metros) or diametro_interno_metros <= 0:
         raise ValueError(
             "El diámetro interno calculado es inválido. "
             f"Diámetro exterior: {diametro_exterior} pulgadas. "
@@ -381,7 +387,7 @@ def calcular_volumen_interno_m3(
         * longitud
     )
 
-    if volumen <= 0:
+    if not _es_numero_valido(volumen) or volumen <= 0:
         raise ValueError(
             "El volumen interno calculado es inválido. "
             f"Resultado: {volumen} m3."
@@ -446,22 +452,22 @@ def calcular_linepack_sm3(
         "La presión promedio absoluta",
     )
 
-    if TEMPERATURA_ESTANDAR_KELVIN <= 0:
+    if not _es_numero_valido(TEMPERATURA_ESTANDAR_KELVIN) or TEMPERATURA_ESTANDAR_KELVIN <= 0:
         raise ValueError(
             "La temperatura estándar debe ser mayor que cero."
         )
 
-    if TEMPERATURA_GAS_KELVIN <= 0:
+    if not _es_numero_valido(TEMPERATURA_GAS_KELVIN) or TEMPERATURA_GAS_KELVIN <= 0:
         raise ValueError(
             "La temperatura del gas debe ser mayor que cero."
         )
 
-    if PRESION_ESTANDAR_BAR_ABS <= 0:
+    if not _es_numero_valido(PRESION_ESTANDAR_BAR_ABS) or PRESION_ESTANDAR_BAR_ABS <= 0:
         raise ValueError(
             "La presión estándar debe ser mayor que cero."
         )
 
-    if FACTOR_COMPRESIBILIDAD_Z <= 0:
+    if not _es_numero_valido(FACTOR_COMPRESIBILIDAD_Z) or FACTOR_COMPRESIBILIDAD_Z <= 0:
         raise ValueError(
             "El factor de compresibilidad Z debe ser mayor "
             "que cero."
@@ -489,7 +495,7 @@ def calcular_linepack_sm3(
         )
     )
 
-    if linepack <= 0:
+    if not _es_numero_valido(linepack) or linepack <= 0:
         raise ValueError(
             "El linepack calculado es inválido. "
             f"Resultado: {linepack} Sm3."
@@ -719,15 +725,16 @@ def calcular_prediccion_tramo(
 
     puntos = prediccion.get("puntos")
 
-    if not isinstance(puntos, list):
-        raise ValueError(
-            "La predicción del tramo no contiene una lista "
-            "válida de puntos."
-        )
-
     prediccion["calculada"] = False
     prediccion["timestamp_calculo"] = None
     prediccion["error"] = None
+
+    if not isinstance(puntos, list) or len(puntos) != CANTIDAD_PUNTOS_PREDICCION:
+        prediccion["error"] = "Se requieren exactamente 72 puntos predictivos."
+        for punto in puntos if isinstance(puntos, list) else []:
+            if isinstance(punto, dict):
+                punto.update(linepack=None, valido=False, error=prediccion["error"])
+        return tramo
 
     errores_generales = []
 
@@ -783,6 +790,8 @@ def calcular_prediccion_tramo(
         )
 
         try:
+            if punto.get("indice") != posicion or punto.get("campo") != f"F_{posicion:02d}":
+                raise ValueError("Índice/campo predictivo inconsistente.")
             presion_promedio = _obtener_numero_positivo(
                 punto.get("presion_promedio"),
                 (
@@ -823,7 +832,7 @@ def calcular_prediccion_tramo(
     cantidad_total = len(puntos)
 
     if (
-        cantidad_total > 0
+        cantidad_total == CANTIDAD_PUNTOS_PREDICCION
         and cantidad_validos == cantidad_total
     ):
         prediccion["calculada"] = True

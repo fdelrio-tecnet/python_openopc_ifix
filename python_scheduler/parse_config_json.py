@@ -6,7 +6,10 @@ from typing import Any, Dict, Union, List
 # CONFIGURACIÓN DE PREDICCIONES
 # ============================================================
 
-CANTIDAD_PUNTOS_PREDICCION = 72
+if __package__:
+    from .constantes import CANTIDAD_PUNTOS_PREDICCION
+else:
+    from constantes import CANTIDAD_PUNTOS_PREDICCION
 
 SUFIJO_PPROMEDIO_PRED = "PPROMEDIO_PRED"
 SUFIJO_LINEPACK_PRED = "LINEPACK_PRED"
@@ -22,6 +25,10 @@ def cargar_estructura_tramos(
     """
     Carga el archivo JSON de configuración y construye una estructura
     plana de tramos, indexada por el ID único de cada tramo.
+
+    Incluye tanto sistema['tramos'] como subsistema['tramos'], sin
+    modificar el JSON compartido. Los IDs y las salidas OPC deben ser
+    únicos en toda la configuración; las entradas pueden compartirse.
 
     Por cada tramo se generan:
 
@@ -166,6 +173,7 @@ def cargar_estructura_tramos(
         )
 
     tramos_por_id: Dict[str, Dict[str, Any]] = {}
+    destinos_por_tag: Dict[str, str] = {}
 
     for nombre_sistema, sistema in sistemas.items():
         if not isinstance(sistema, dict):
@@ -173,12 +181,22 @@ def cargar_estructura_tramos(
                 f"El sistema '{nombre_sistema}' debe ser un objeto."
             )
 
-        subsistemas = sistema.get("subsistemas")
+        grupos_tramos = []
+        if "tramos" in sistema:
+            tramos_directos = sistema["tramos"]
+            if not isinstance(tramos_directos, list):
+                raise ValueError(
+                    f"La clave 'tramos' del sistema '{nombre_sistema}' "
+                    "debe contener una lista."
+                )
+            grupos_tramos.append((f"sistema '{nombre_sistema}'", tramos_directos))
 
-        if subsistemas is None:
+        subsistemas = sistema.get("subsistemas", [])
+
+        if "subsistemas" not in sistema and "tramos" not in sistema:
             raise ValueError(
                 f"El sistema '{nombre_sistema}' no contiene "
-                "la clave 'subsistemas'."
+                "la clave 'subsistemas' ni 'tramos'."
             )
 
         if not isinstance(subsistemas, list):
@@ -210,10 +228,15 @@ def cargar_estructura_tramos(
                     f"'{subsistema_id}' debe contener una lista."
                 )
 
+            grupos_tramos.append((
+                f"sistema '{nombre_sistema}', subsistema '{subsistema_id}'",
+                tramos,
+            ))
+
+        for contexto_grupo, tramos in grupos_tramos:
             for indice_tramo, tramo_json in enumerate(tramos):
                 contexto = (
-                    f"sistema '{nombre_sistema}', "
-                    f"subsistema '{subsistema_id}', "
+                    f"{contexto_grupo}, "
                     f"posición de tramo {indice_tramo}"
                 )
 
@@ -372,6 +395,18 @@ def cargar_estructura_tramos(
                             "prediccion": crear_estructura_prediccion(),
                         },
                 }
+
+                tags = tramos_por_id[tramo_id]["tags"]
+                salidas = [tags["ppromedio"], tags["linepack"]] + tags["linepack_pred"]
+                for tag in salidas:
+                    clave = tag.strip().casefold()
+                    if clave in destinos_por_tag:
+                        raise ValueError(
+                            f"Tag de salida duplicado '{tag}' en el tramo "
+                            f"'{tramo_id}' ({contexto}); ya pertenece al tramo "
+                            f"'{destinos_por_tag[clave]}'. Revise los base-tags."
+                        )
+                    destinos_por_tag[clave] = tramo_id
 
     return tramos_por_id
 
