@@ -137,11 +137,16 @@ La CLI no cambia endpoint, programas de cálculo ni configuración de iFIX.
 El informe de importación debe incluir cantidades agregadas, modificadas,
 inalteradas, inactivadas y discordancias, más revisión resultante.
 
-## Opciones operativas pendientes de materializar
+## Configuración UA implementada y opciones pendientes
 
-Rutas absolutas de base y JSON, endpoint/namespace UA, intervalos 30/600 segundos,
-sondeo SQLite inicial de 1–2 segundos, calidad Good exigida, timeouts/reintentos y
-rotación de logs. Umbrales iniciales propuestos: 2 minutos sin actualización actual
-y 30 minutos sin verificación predictiva válida. Deben ser configurables y probarse.
+El archivo [opcua.ejemplo.json](../configuracion/opcua.ejemplo.json) define base,
+puerto, namespace, sondeo y vigencias del servidor de ensayo. La base relativa se
+resuelve respecto de ese JSON. Ver [contrato completo](servidor_opcua_ensayo.md).
+No se recarga automáticamente; altas/cambios de nombres de nodos exigen reinicio.
+La configuración del coordinador, reintentos y logs rotativos sigue pendiente.
+
+Intervalos del calculador 30/600 segundos, calidad Good exigida, timeouts/reintentos
+y rotación de logs deberán incorporarse a su configuración operativa. Los umbrales
+UA implementados son iniciales; requieren validación en destino.
 
 No guardar opciones de este programa dentro del JSON compartido de CamuLinepack.

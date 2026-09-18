@@ -1,0 +1,8 @@
+{
+  "base_sqlite": "../datos/linepack.sqlite3",
+  "puerto": 48410,
+  "namespace_uri": "urn:linepack:local",
+  "sondeo_segundos": 2.0,
+  "vigencia_actual_segundos": 120.0,
+  "vigencia_predictiva_segundos": 1800.0
+}

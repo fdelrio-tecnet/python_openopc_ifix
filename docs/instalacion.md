@@ -4,10 +4,10 @@
 
 ## Estado y destino
 
-El sistema completo todavía no arranca: servidor UA y coordinador están pendientes.
+El sistema completo todavía no arranca: el coordinador está pendiente.
 Existen [SQLite v3](almacenamiento.md), resultados/importadores y consola de
 administración, sin dependencias externas nuevas. Esta guía distingue requisitos de procedimientos
-ejecutables. No hay un `requirements.txt` del servidor propio todavía.
+ejecutables. Existe servidor UA de ensayo con dependencias separadas.
 La etapa 3a de nodos/disponibilidad también usa solo biblioteca estándar y módulos
 del repositorio; no instala biblioteca UA ni necesita endpoint para sus pruebas.
 
@@ -32,11 +32,27 @@ No copiar ese entorno al destino: crearlo allí con el intérprete correspondien
 La carpeta local `openopc/` está ignorada por Git y no constituye instalación ni
 dependencia reproducible incluida en un clon nuevo.
 
-## Entorno del servidor OPC UA — planificado
+## Entorno del servidor OPC UA — desarrollo verificado, destino pendiente
 
-Proceso y entorno virtual separados, Python x64 y biblioteca UA con versiones
-fijadas después de comprobar soporte en Windows Server 2019. `asyncua` es la
-alternativa evaluada, no una dependencia ya instalada/aprobada por pruebas reales.
+Esta computadora NO es el destino. Se verificó Python 3.12.14 x64 con asyncua 2.0.1
+en `.venv-opcua`, separado de COM. Ver [ADR 004](decisiones/004-transporte-ua-ensayo.md).
+La biblioteca requiere Python >=3.10; no instalar sus dependencias en Python 3.9 x86.
+La selección todavía debe calificarse en Windows Server 2019 con IGS.
+
+Con Python 3.12 x64 seleccionado como `python`, desde la raíz:
+
+```console
+python -m venv .venv-opcua
+.venv-opcua\Scripts\python.exe -m pip install -r servidor_opcua/requirements-lock.txt
+.venv-opcua\Scripts\python.exe -m pip check
+```
+
+`requirements.txt` fija la biblioteca; `requirements-lock.txt` fija la resolución
+probada en desarrollo. No es una garantía de compatibilidad con el equipo de destino.
+Recrear allí el entorno; no copiar venvs, rutas personales o bases sintéticas como
+datos de producción. Para cambios de dependencias, repetir las dos suites y registrar
+la nueva resolución. No se instala un servicio ni se modifica el firewall.
+Arranque/configuración: [guía de ensayo](servidor_opcua_ensayo.md).
 
 La biblioteca compartida de almacenamiento usa `sqlite3`, sin dependencias nuevas,
 y se verifica su sintaxis Python 3.9. Falta probar el runtime x86 real.
@@ -64,4 +80,7 @@ python -c "import sys, struct, sqlite3; print(sys.version); print(struct.calcsiz
 
 En el proceso OpenOPC el resultado de arquitectura debe ser 32. Ver
 [pruebas](pruebas.md) para comandos sin iFIX. Los comandos de creación/importación
-de base están en [administración](configuracion_importaciones.md); arranque UA pendiente.
+de base están en [administración](configuracion_importaciones.md).
+Antes de desplegar: verificar instalación x64, versiones SQLite de ambos procesos,
+permisos de datos/WAL, puerto libre, política de seguridad y pruebas IGS/AR bajo
+la cuenta real. No declarar producción aprobada por pasar las pruebas locales.

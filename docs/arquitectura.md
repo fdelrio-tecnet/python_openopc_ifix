@@ -45,9 +45,10 @@ Existen funciones de parser, lectura OPC DA, cálculo y escritura OPC DA. Las
 pruebas las integran con un cliente falso. `python_scheduler/main.py` solamente
 imprime `Main`; no coordina procesos ni ciclos. Existe infraestructura SQLite con
 esquema v3, catálogo/geometrías, importadores, resultados, snapshots, consola y
-migración con backup. Todavía no hay servidor OPC UA ni coordinador operativo.
+migración con backup. Todavía no hay coordinador operativo.
 Existe además `servidor_opcua/` con modelo lógico de nodos y preparación pura
-de disponibilidad/valores. No implementa transporte ni escucha en ningún puerto.
+de disponibilidad/valores y transporte asyncua de ensayo local (etapa 3b).
+La computadora de desarrollo no es el servidor de destino; IGS no fue probado aquí.
 
 La escritura actual del código tiene como destino directo iFIX. En el objetivo,
 el calculador guardará en SQLite y el servidor publicará hacia IGS/iFIX. Mantener
@@ -107,7 +108,7 @@ No hay benchmarks del diseño nuevo ni cifras garantizadas de CPU/RAM.
 
 ## Pendientes antes de integrar
 
-- Fijar entorno Python x64 y versión de biblioteca UA.
+- Calificar en destino Python 3.12 x64 y asyncua 2.0.1, ya probados en desarrollo.
 - Definir namespace URI, NodeIds, endpoint, calidad/timestamps y mapeo IGS/AR.
 - Comprobar permisos de directorio, runtime y endpoint bajo el usuario real.
 - Definir límites de paquetes, timeout y reintentos de SQLite.
@@ -121,27 +122,31 @@ No hay benchmarks del diseño nuevo ni cifras garantizadas de CPU/RAM.
 Sin dependencias OPC; importación de catálogo reutiliza el parser del calculador.
 Verificada por tests de almacenamiento, importaciones y repositorio. Ver su
 [API y limitaciones](almacenamiento.md). El diagrama superior sigue siendo el
-flujo objetivo: ninguna flecha SQLite se conectó todavía al calculador o UA.
+flujo objetivo: el calculador todavía no se conectó a SQLite.
 Las flechas JSON → importadores → SQLite sí están implementadas mediante API Python.
 El repositorio guarda resultados y expone snapshots para productores/consumidores
-de prueba. Las flechas calculador ↔ SQLite y SQLite → UA siguen pendientes de integración.
+de prueba. SQLite → UA está implementada para ensayo; calculador ↔ SQLite pendiente.
 
-Etapa 3a implementada, comprobada con productor SQLite temporal:
+Etapas 3a/3b implementadas, comprobadas con productor SQLite temporal:
 
 ```text
-Snapshot completo → validación de contexto y vigencia → valores/fechas/estado
-                                                     → adaptador UA (pendiente)
+Productor sintético → SQLite temporal → snapshot completo → contexto/vigencia
+    → adaptador asyncua (127.0.0.1, solo lectura) → cliente UA de prueba
 ```
 
 `servidor_opcua/nodos.py` define claves candidatas estables y nombres de negocio;
 `publicacion.py` prepara resultados sin modificar SQLite. Ver [contrato](publicacion_opcua.md).
 
-## Estructura restante, todavía no creada
+## Transporte de ensayo implementado
 
 ```text
-servidor_opcua/    main.py, configuracion.py, adaptador UA, requirements.txt
-configuracion/    aplicacion.ejemplo.json, geometria.ejemplo.json
+servidor_opcua/    __main__.py, configuracion.py, adaptador.py, requirements*.txt
+                  productor_prueba.py, cliente_prueba.py
+configuracion/    opcua.ejemplo.json
+tests_opcua/      test_servidor_local.py (red local, ejecución explícita)
 ```
 
-La documentación se crea antes de esas implementaciones. Su introducción deberá
-actualizar este estado, el modelo de datos y los comandos operativos.
+Ver [guía de ensayo](servidor_opcua_ensayo.md). Sondeo completo cada 2 s de espera,
+conexión SQLite abierta/cerrada por sondeo fuera del event loop, publicación
+secuencial de nodos. Consulta incremental, recuperación automática, reutilización
+de conexión y logs rotativos siguen siendo objetivos, no capacidades de esta parte.

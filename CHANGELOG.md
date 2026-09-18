@@ -2,6 +2,19 @@
 
 ## Sin versión publicada
 
+### Etapa 3b — transporte UA de ensayo (2026-09-18)
+
+- Servidor asyncua 2.0.1 en entorno separado Python 3.12.14 x64 de desarrollo.
+- Configuración portable, endpoint limitado a loopback, nodos de solo lectura,
+  tipos escalares/array de 72, StatusCodes y fechas de origen preservadas.
+- Sondeo completo de SQLite en lectura, productor sintético y cliente de prueba.
+  Falla global: intenta invalidar y cierra; recuperación automática pendiente.
+- 89 pruebas sin red y 7 de comunicación UA local satisfactorias; sin acceso a iFIX.
+- Documentados perfil anónimo sin cifrado exclusivo de ensayo, límites y traslado
+  al servidor de destino. No se instaló un servicio ni se modificó el firewall.
+- Sin cambios de esquema SQLite ni integración del calculador. Validación sobre
+  Windows Server 2019, IGS/AR y consumo de recursos todavía pendiente.
+
 ### Etapa 3a — preparación de publicación (2026-09-18)
 
 - Modelo lógico de tres nodos por tramo, con claves estables candidatas y nombres actuales.

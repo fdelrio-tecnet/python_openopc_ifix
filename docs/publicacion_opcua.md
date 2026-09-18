@@ -5,8 +5,9 @@
 ## Estado real
 
 Existe un modelo lógico de nodos y una función pura que prepara valores, fechas y
-disponibilidad desde un snapshot completo. **No hay todavía un servidor OPC UA
-escuchando**, cliente UA de pruebas, dependencia UA instalada, endpoint ni certificados.
+disponibilidad desde un snapshot completo. La etapa 3b agrega un
+[servidor y cliente UA de ensayo](servidor_opcua_ensayo.md) en entorno separado.
+No hay perfil con certificados ni validación en IGS/servidor de destino todavía.
 No se modifica SQLite, el calculador o iFIX. Las pruebas usan datos sintéticos;
 una de ellas recorre productor SQLite temporal → snapshot → preparación.
 
@@ -30,8 +31,8 @@ que la decisión sea reproducible y testeable; se normaliza a UTC.
 | LINEPACK | `<base_tag>_LINEPACK` | Double | Escalar | 2 decimales |
 | LINEPACK_PRED | `<base_tag>_LINEPACK_PRED` | Double | 72 valores | 2 decimales |
 
-Todos se definen como no escribibles. Eso es metadato de diseño: el adaptador UA
-deberá aplicar realmente permisos de solo lectura. PPROMEDIO_PRED sigue siendo
+Todos se definen como no escribibles; el adaptador UA aplica permisos de solo
+lectura, comprobados mediante cliente real local. PPROMEDIO_PRED sigue siendo
 entrada ajena y no se vuelve a exponer aquí. Geometrías quedan en SQLite; su
 exposición opcional no está implementada en esta parte.
 
@@ -40,8 +41,8 @@ para evitar colisiones. Usa el ID, no el orden ni el base-tag; cambiar base-tag
 cambia nombre visible y revisión del catálogo, pero no esta clave. Los nombres
 no incluyen `FIX.` ni `.F_CV`: son nombres previstos UA, no Item IDs OPC DA.
 
-Las claves son **candidatas** al identificador string UA. No se asigna namespace
-URI/índice ni un NodeId definitivo hasta probar IGS y AR. Los nombres actuales
+Las claves se usan como identificador string UA de ensayo, con namespace URI
+configurable; su aceptación en IGS y AR sigue pendiente. Los nombres actuales
 de PDB no se cambian automáticamente. Planificar organización por tramo para que
 un registro inactivo y otro activo que reutilice base-tag no colisionen por nombre.
 
@@ -60,8 +61,9 @@ Cada `PublicacionNodo` incluye definición, valor, disponibilidad, motivo,
 Nunca se rellenan faltantes con cero. Un escalar 0 solo puede aparecer como valor
 numérico real admitido (por ejemplo linepack 0), no como sustituto de disponibilidad.
 Un consumidor no debe utilizar el valor sin mirar su estado. Los estados aquí
-son del proyecto; **no son StatusCodes OPC UA ni calidad iFIX**. Su traducción y
-tratamiento de valores nulos deberán verificarse con la biblioteca UA y con IGS.
+son del proyecto; **no son StatusCodes OPC UA ni calidad iFIX**. La traducción
+[implementada en el adaptador](servidor_opcua_ensayo.md) usa Null para Bad, aunque
+la preparación conserve un último valor; su interpretación en IGS queda pendiente.
 
 Para habilitar disponibilidad se comprueba: tramo/geometría activos, versión de
 geometría y revisión de catálogo coincidentes, estado válido referido al mismo
@@ -112,12 +114,11 @@ combinar deltas y asegurar que todas las dependencias de contexto estén present
 Se incluyen tramos inactivos, con valores no disponibles, para permitir invalidar
 nodos que ya existían. Todavía no se crean, retiran ni renombran nodos en caliente.
 
-Una excepción al leer SQLite no llega a esta función como dato: el futuro servicio
-deberá invalidar sus salidas por falla de fuente, registrar el error y reintentar.
+Una excepción al leer SQLite no llega a esta función como dato: el servicio de
+ensayo intenta invalidar sus salidas, registra el error y cierra. Reintentos pendientes.
 No debe mantener Good indefinidamente sobre una caché que ya no puede verificar.
 Tampoco debe avanzar el cursor si falla la publicación de un conjunto.
 
-Siguiente parte (3b): elegir/fijar runtime y biblioteca UA, servidor restringido a
-loopback, configuración de namespace/endpoint, aplicar tipos y StatusCodes, productor
-de prueba separado y lectura con cliente UA. Luego (3c): sondeo incremental,
-recuperación y ensayos IGS/AR. No hay mediciones de consumo ni prueba de red todavía.
+Etapa 3b implementada: transporte loopback, tipos/StatusCodes, productor y cliente,
+verificados en desarrollo. Siguiente parte (3c): sondeo incremental, recuperación
+y ensayos IGS/AR autorizados. No hay mediciones de consumo representativas todavía.

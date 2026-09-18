@@ -24,8 +24,9 @@ el módulo con OpenOPC falso; no abren conexiones reales.
 | `test_importaciones.py` | 12 | Cargas completas, versiones, discordancias, rollback, validación y migración v1 con backup |
 | `test_repositorio.py` | 19 | Paquetes, CAS, precisión, firmas, rollback, adquisición, snapshots concurrentes, dos procesos, migración v2 y CLI |
 | `test_publicacion.py` | 15 | Nodos, precisión, vencimiento sin cambios, contexto, errores locales, series, fechas y productor SQLite temporal |
+| `test_configuracion_ua.py` | 4 | Rutas portables, validaciones, productor sintético y protección de base existente |
 
-Última entrega de código: 85 pruebas satisfactorias con Python 3.12 x64 y análisis
+Última entrega de código: 89 pruebas sin red satisfactorias con Python 3.12 x64 y análisis
 de sintaxis Python 3.9. No es validación del runtime Python 3.9 x86 ni de COM.
 El número es una referencia de esa entrega: actualizar al cambiar la suite.
 
@@ -62,8 +63,22 @@ en el equipo de destino. Ver [alcance de la API](almacenamiento.md).
 ## Etapa servidor UA sin iFIX
 
 Etapa 3a verificada: proyección pura desde snapshot, sin sockets ni biblioteca UA.
-Los casos siguientes de transporte, calidad UA, IGS y reinicios del servicio siguen
-pendientes. Pruebas de disponibilidad interna no equivalen a validación OPC UA.
+Etapa 3b: 7 pruebas de red local satisfactorias con Python 3.12.14 x64/asyncua 2.0.1.
+No se conectan a iFIX: usan SQLite temporal y puertos efímeros loopback, cerrados
+al terminar. No se descubren con `-s tests`; requieren ejecución explícita:
+
+```console
+.venv-opcua\Scripts\python.exe -m unittest discover -s tests_opcua -v
+```
+
+Verifican valores/tipos/array/extremos/fechas, rechazo de escrituras y creación de
+nodos por cliente, Bad sin resultado, vencimiento/invalidez, identidades tras
+reinicio, rechazo de cambio de catálogo, puerto ocupado y sondeo/cierre del servicio.
+La suite sin red no necesita instalar asyncua. La prueba UA usa cliente y servidor
+de la misma biblioteca: no sustituye interoperabilidad con IGS.
+
+La lista siguiente es el criterio general; recuperación automática, altas dinámicas,
+carga representativa y validación del equipo de destino siguen pendientes:
 
 - Productor falso guarda en SQLite; cliente UA lee escalares y arrays.
 - NodeIds estables después de reiniciar o ampliar catálogo.

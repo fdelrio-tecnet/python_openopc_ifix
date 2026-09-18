@@ -4,13 +4,14 @@
 
 ## Estado
 
-Procedimiento objetivo; coordinador y servidor propio no están implementados.
+Procedimiento objetivo; coordinador pendiente, servidor propio disponible en ensayo.
 Existe [almacenamiento SQLite](almacenamiento.md) con importadores de catálogo y
 geometrías, resultados, adquisición, snapshots y consola administrativa. Migrar
 v1/v2 exige backup. No ejecutar `python_scheduler/main.py` esperando servicio: imprime
 `Main` y finaliza. Los scripts manuales existentes pueden escribir en iFIX.
-La preparación de publicación ya evalúa disponibilidad sin red; todavía no hay
-comando de arranque de servidor UA. Ver [etapa 3a](publicacion_opcua.md).
+Hay [comando de arranque UA de ensayo](servidor_opcua_ensayo.md), con configuración
+portable y sin instalación automática en el equipo de destino. Ante fallo global
+intenta invalidar y cierra: no implementa todavía los reintentos de la tabla futura.
 
 ## Arranque previsto
 
@@ -36,11 +37,12 @@ Una serie sin cambios recibe una actualización de verificación válida. El ser
 evalúa vencimientos aunque no haya revisiones nuevas. Umbrales propuestos iniciales:
 2 minutos desde cálculo actual y 30 minutos desde verificación predictiva válida.
 La función de preparación ya implementa estos umbrales configurables e inclusivos;
-falta el proceso periódico que la invoque y aplique calidad al servidor real.
+el proceso de ensayo ya los reevalúa en cada sondeo y aplica StatusCodes UA.
 
 Conservar último valor y fechas, marcándolo como desactualizado/no disponible
 cuando corresponda. Nunca presentar cero inicial como resultado válido.
-La traducción exacta a StatusCode UA y calidad iFIX queda pendiente de integración.
+La traducción a StatusCode UA está [documentada](servidor_opcua_ensayo.md);
+su interpretación como calidad iFIX queda pendiente de integración.
 No renovar timestamps originales solo por reiniciar o republicar.
 
 ## Tratamiento previsto de fallas

@@ -7,8 +7,9 @@ los documentos relevantes de `docs/` antes de modificar código.
 
 - Conservar Python 3.9 de 32 bits para el proceso OpenOPC/COM. No introducir
   sintaxis o dependencias incompatibles en ese proceso ni en módulos compartidos.
-- El futuro servidor OPC UA tendrá su propio entorno; no imponer sus dependencias
-  al proceso de cálculo. Versión de Python y biblioteca UA aún por fijar.
+- El servidor OPC UA tiene su propio entorno; no imponer sus dependencias al
+  proceso de cálculo. Python 3.12 x64/asyncua se verificaron en desarrollo;
+  la calificación en el equipo de destino sigue pendiente. Ver docs/instalacion.md.
 - No modificar el JSON de tramos compartido con CamuLinepack. Adaptar el lector.
 - Conservar fórmulas, unidades y `PI_SOBRE_4 = 0.785398` salvo cambio explícitamente
   acordado y acompañado de análisis de impacto.
