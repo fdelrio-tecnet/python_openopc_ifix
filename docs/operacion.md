@@ -4,8 +4,10 @@
 
 ## Estado
 
-Procedimiento objetivo; coordinador, almacenamiento y servidor propio no están
-implementados. No ejecutar `python_scheduler/main.py` esperando servicio: imprime
+Procedimiento objetivo; coordinador y servidor propio no están implementados.
+Existe [almacenamiento SQLite](almacenamiento.md) con importadores de catálogo y
+geometrías, resultados, adquisición, snapshots y consola administrativa. Migrar
+v1/v2 exige backup. No ejecutar `python_scheduler/main.py` esperando servicio: imprime
 `Main` y finaliza. Los scripts manuales existentes pueden escribir en iFIX.
 
 ## Arranque previsto
@@ -70,8 +72,18 @@ ya confirmado por el hecho de cerrar el publicador.
 Antes de migrar o restaurar, detener o coordinar productores y publicador. Utilizar
 backup consistente de SQLite (API de backup o procedimiento con base cerrada).
 No copiar solo el `.db` activo ignorando WAL. Conservar también configuración y
-versión del software. La herramienta y comando de backup aún no existen.
+versión del software. Existe backup dentro de `migrar_base`/`migrar-base`; no hay comando
+general de backup/restauración. Ver [procedimiento de migración](almacenamiento.md).
 
 Restaurar una base requiere reiniciar cursores y validar esquema, fechas,
 geometrías y disponibilidad. No confundir datos restaurados con lecturas nuevas.
 Retención de backups y ubicación final pendientes del despliegue.
+
+## Conflictos de paquetes y reloj
+
+El repositorio rechaza revisiones antiguas y cambios de geometría/catálogo durante
+el cálculo. Releer y recalcular; nunca sustituir el token de un paquete viejo para
+forzar su aceptación. Un reintento conserva ID, datos, fechas y token originales.
+Las fechas de paquetes distintos deben avanzar: un retroceso del reloj local
+requiere diagnóstico, no inventar timestamps para eludir el control.
+Consultar [contrato completo](repositorio_resultados.md).

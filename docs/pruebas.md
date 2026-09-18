@@ -20,8 +20,11 @@ el módulo con OpenOPC falso; no abren conexiones reales.
 | `test_parse_config_json.py` | 10 | Ambas ubicaciones, duplicados, validación, tags, 72 puntos y estados independientes |
 | `test_escritura_predicciones.py` | 9 | Respuestas parciales/duplicadas/ajenas, lotes, errores globales y reintentos |
 | `test_ciclo_opc.py` | 7 | Flujo actual/predictivo, Good configurable, no finitos, F_00/F_71 y estado tras fallas |
+| `test_almacenamiento.py` | 13 | Creación exclusiva, persistencia, versión, rollback/COMMIT fallido, lectura protegida, snapshot y bloqueo entre conexiones |
+| `test_importaciones.py` | 12 | Cargas completas, versiones, discordancias, rollback, validación y migración v1 con backup |
+| `test_repositorio.py` | 19 | Paquetes, CAS, precisión, firmas, rollback, adquisición, snapshots concurrentes, dos procesos, migración v2 y CLI |
 
-Última entrega de código: 26 pruebas satisfactorias con Python 3.12 x64 y análisis
+Última entrega de código: 70 pruebas satisfactorias con Python 3.12 x64 y análisis
 de sintaxis Python 3.9. No es validación del runtime Python 3.9 x86 ni de COM.
 El número es una referencia de esa entrega: actualizar al cambiar la suite.
 
@@ -34,17 +37,23 @@ Para ejecutar toda la suite automática desde la raíz:
 python -m unittest discover -s tests -v
 ```
 
-## Próxima etapa: almacenamiento e importaciones
+## Almacenamiento e importaciones: cobertura y pendientes
 
-- JSON válido, inválido, duplicados de miembros y magnitudes no finitas.
-- Catálogo y geometría dispares sin rechazo global.
-- Altas, cambios, inactivaciones y reimportación idéntica.
-- Fallo a mitad de importación conserva la versión anterior completa.
-- Pareja actual y serie de 72 no quedan parcialmente reemplazadas.
-- Cambio concurrente de geometría rechaza cálculo obsoleto.
-- Reintento de paquete, ID reutilizado con contenido distinto y paquete retrasado.
-- Dos procesos lectores/escritores, bloqueos y timeout acotado.
-- Snapshot/revisiones sin omisiones al escribir concurrentemente.
+Infraestructura 2a verificada con archivos temporales y conexiones independientes
+en un proceso. Etapa 2b verifica importaciones y backup de migración en archivos
+temporales. Etapa 2c agrega concurrencia de dos procesos y snapshots frente a un
+escritor. Faltan ensayos prolongados, recuperación operativa y medidas
+en el equipo de destino. Ver [alcance de la API](almacenamiento.md).
+
+- Verificado: JSON válido/inválido, duplicados de miembros y magnitudes no finitas.
+- Verificado: catálogo y geometría dispares sin rechazo global.
+- Verificado: altas, cambios, inactivaciones y reimportación idéntica.
+- Verificado: fallo a mitad de importación conserva la versión anterior completa.
+- Verificado: pareja actual y serie de 72 no quedan parcialmente reemplazadas.
+- Verificado: cambio de geometría/catálogo rechaza cálculo obsoleto.
+- Verificado: reintento, ID reutilizado con otro contenido y paquete retrasado.
+- Verificado: dos procesos escritores compiten por revisión; bloqueos con conexiones independientes.
+- Verificado: snapshot/revisiones sin omisiones al escribir durante consultas.
 - Base reabierta conserva último estado, esquema incompatible se rechaza.
 - Backup/restauración consistente y reinicio de cursores.
 - Ejecutar bajo ambos runtimes y versiones SQLite seleccionadas.

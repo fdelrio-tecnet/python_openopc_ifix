@@ -4,8 +4,9 @@
 
 ## Estado y destino
 
-El sistema completo todavía no se instala ni arranca: SQLite, administración y
-servidor UA están planificados. Esta guía distingue requisitos de procedimientos
+El sistema completo todavía no arranca: servidor UA y coordinador están pendientes.
+Existen [SQLite v3](almacenamiento.md), resultados/importadores y consola de
+administración, sin dependencias externas nuevas. Esta guía distingue requisitos de procedimientos
 ejecutables. No hay un `requirements.txt` del servidor propio todavía.
 
 Destino informado: un equipo Windows Server 2019 Datacenter 1809; todos los
@@ -35,8 +36,9 @@ Proceso y entorno virtual separados, Python x64 y biblioteca UA con versiones
 fijadas después de comprobar soporte en Windows Server 2019. `asyncua` es la
 alternativa evaluada, no una dependencia ya instalada/aprobada por pruebas reales.
 
-La biblioteca compartida de almacenamiento será compatible con Python 3.9 y
-usará `sqlite3`. Verificar `sqlite3.sqlite_version` en ambos runtimes; la versión
+La biblioteca compartida de almacenamiento usa `sqlite3`, sin dependencias nuevas,
+y se verifica su sintaxis Python 3.9. Falta probar el runtime x86 real.
+Verificar `sqlite3.sqlite_version` en ambos runtimes; la versión
 de Python no define por sí sola todas las capacidades del motor SQLite incluido.
 
 ## Rutas y permisos
@@ -60,4 +62,4 @@ python -c "import sys, struct, sqlite3; print(sys.version); print(struct.calcsiz
 
 En el proceso OpenOPC el resultado de arquitectura debe ser 32. Ver
 [pruebas](pruebas.md) para comandos sin iFIX. Los comandos de creación/importación
-de base y arranque UA se agregarán cuando existan y hayan sido verificados.
+de base están en [administración](configuracion_importaciones.md); arranque UA pendiente.

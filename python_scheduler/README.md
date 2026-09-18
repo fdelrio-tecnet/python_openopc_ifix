@@ -2,8 +2,8 @@
 
 > Alcance de este documento: módulos existentes de cálculo y OPC DA. El punto de
 > entrada continúa como stub; no hay servicio completo ejecutable. La arquitectura
-> objetivo ahora utiliza SQLite compartido y un servidor OPC UA propio, aún no
-> implementados. Consultar el [README principal](../README.md) y el
+> objetivo utiliza SQLite compartido (catálogo/geometrías ya implementados) y un
+> servidor OPC UA propio todavía pendiente. Consultar el [README principal](../README.md) y el
 > [flujo actualizado](../docs/arquitectura.md) como fuentes del estado general.
 > Las descripciones de publicación directa en iFIX de este documento corresponden
 > a las funciones OPC DA existentes, no a la integración futura SQLite/UA.
@@ -1110,3 +1110,11 @@ El trabajo pendiente se concentra principalmente en la capa de ejecución:
 Las funciones base están implementadas y verificadas con clientes falsos. La
 integración operativa y la nueva arquitectura SQLite/OPC UA permanecen pendientes;
 ver el [estado del proyecto](../README.md).
+## Integración con almacenamiento SQLite
+
+El parser exporta `construir_estructura_tramos(configuracion)` para validar un
+objeto JSON ya leído, además de `cargar_estructura_tramos(ruta_json)`. Los
+importadores SQLite reutilizan esa función tras una lectura estricta que detecta
+miembros JSON duplicados, sin releer ni modificar el archivo compartido.
+Ver [importaciones](../docs/configuracion_importaciones.md). El calculador aún
+no lee geometría ni guarda resultados en SQLite; `main.py` sigue siendo un stub.

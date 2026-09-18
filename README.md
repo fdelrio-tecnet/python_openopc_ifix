@@ -5,16 +5,19 @@ Las entradas se leen de iFIX mediante OpenOPC. La arquitectura acordada incorpor
 SQLite local como intercambio y almacenamiento del último estado, y un servidor
 OPC UA propio que publicará los resultados hacia IGS, iFIX y Operations Hub.
 
-## Estado real — 17 de septiembre de 2026
+## Estado real — 18 de septiembre de 2026
 
 | Componente | Estado |
 |---|---|
 | Parser del JSON compartido | Implementado: tramos directos y en subsistemas, IDs y salidas únicas |
 | Matemática actual y predictiva | Implementada; validaciones de finitud y 72 puntos |
 | Lectura/escritura OPC DA | Implementada en funciones; verificada con cliente falso |
-| Pruebas automatizadas sin iFIX | 26 pruebas ejecutadas satisfactoriamente durante la última entrega de código |
+| Pruebas automatizadas sin iFIX | 70 pruebas satisfactorias, incluidas SQLite y concurrencia multiproceso |
 | Coordinador `python_scheduler/main.py` | Stub; solo imprime `Main` |
-| SQLite, esquema e importadores | Planificados; todavía no existen |
+| Infraestructura SQLite | Implementada: esquema v3, transacciones y migración desde v1/v2 con backup |
+| Catálogo y geometrías SQLite | Implementados: importaciones completas mediante API Python, versiones y revisiones |
+| Resultados SQLite | Implementados: paquetes atómicos, adquisición, control de revisiones y snapshots |
+| Consola de administración | Implementada: crear/migrar, validar/importar y consultar |
 | Servidor OPC UA propio | Planificado; todavía no existe |
 | Integración del nuevo flujo con IGS/iFIX | Pendiente |
 
@@ -26,6 +29,8 @@ No hay todavía un comando que arranque el sistema completo.
 
 - [Arquitectura y flujo de información](docs/arquitectura.md).
 - [Modelo de datos y consistencia](docs/modelo_datos.md).
+- [API SQLite implementada](docs/almacenamiento.md).
+- [Contrato de resultados y snapshots](docs/repositorio_resultados.md).
 - [Configuración e importaciones](docs/configuracion_importaciones.md).
 - [Instalación y entornos](docs/instalacion.md).
 - [Operación y recuperación](docs/operacion.md).
@@ -49,8 +54,11 @@ No está incluido en este repositorio. La ruta de despliegue será configurable.
 
 ## Construcción por etapas
 
-1. Base documental y decisiones de arquitectura: esta entrega.
-2. Almacenamiento SQLite, módulo común e importaciones.
+1. Base documental y decisiones de arquitectura: completada.
+2. Almacenamiento SQLite, módulo común e importaciones:
+   - 2a: infraestructura de conexión/transacciones y metadatos: completada.
+   - 2b: tablas de catálogo/geometría e importación completa mediante API: completada.
+   - 2c: paquetes de resultados, revisiones, snapshots y consola: completada.
 3. Servidor OPC UA con productor de prueba.
 4. Integración del calculador, scheduling, observabilidad y pruebas en iFIX.
 

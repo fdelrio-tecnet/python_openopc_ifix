@@ -1,6 +1,8 @@
 # ADR 001 — SQLite compartido local
 
-Fecha: 2026-09-17. Estado: **decisión de diseño aceptada; implementación pendiente**.
+Fecha: 2026-09-17. Estado: **decisión aceptada; infraestructura implementada,
+catálogo/geometría/resultados implementados; integración OPC pendiente**.
+Ver [etapa 2](../almacenamiento.md).
 
 ## Contexto
 

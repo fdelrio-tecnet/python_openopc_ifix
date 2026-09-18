@@ -155,6 +155,16 @@ def cargar_estructura_tramos(
             f"{error.msg}"
         ) from error
 
+    return construir_estructura_tramos(configuracion)
+
+
+def construir_estructura_tramos(configuracion: Any) -> Dict[str, Dict[str, Any]]:
+    """Valida un objeto JSON ya leído y genera tramos/tags sin modificarlo.
+
+    Mismo contrato que cargar_estructura_tramos; permite a los importadores
+    usar lectura JSON estricta sin releer un archivo que podría cambiar.
+    Estructura, IDs o destinos inválidos producen ValueError.
+    """
     if not isinstance(configuracion, dict):
         raise ValueError(
             "El elemento principal del JSON debe ser un objeto."

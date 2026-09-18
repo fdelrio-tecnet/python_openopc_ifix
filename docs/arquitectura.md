@@ -43,8 +43,9 @@ TCP local para IGS, con puerto configurable y disponibilidad por verificar.
 
 Existen funciones de parser, lectura OPC DA, cálculo y escritura OPC DA. Las
 pruebas las integran con un cliente falso. `python_scheduler/main.py` solamente
-imprime `Main`; no coordina procesos ni ciclos. No existen todavía base SQLite,
-importadores persistentes ni servidor OPC UA.
+imprime `Main`; no coordina procesos ni ciclos. Existe infraestructura SQLite con
+esquema v3, catálogo/geometrías, importadores, resultados, snapshots, consola y
+migración con backup. Todavía no hay servidor OPC UA ni coordinador operativo.
 
 La escritura actual del código tiene como destino directo iFIX. En el objetivo,
 el calculador guardará en SQLite y el servidor publicará hacia IGS/iFIX. Mantener
@@ -111,11 +112,21 @@ No hay benchmarks del diseño nuevo ni cifras garantizadas de CPU/RAM.
 - Confirmar referencia temporal y actualización de las predicciones externas.
 - Validar recuperación, obsolescencia y adquisición de calidad en iFIX.
 
-## Estructura futura, todavía no creada
+## Estructura de almacenamiento implementada
+
+`almacenamiento/`: conexiones, SQL v3, importaciones, migraciones y repositorio de resultados.
+`administracion/__main__.py`: consola local explícita, sin OPC.
+Sin dependencias OPC; importación de catálogo reutiliza el parser del calculador.
+Verificada por tests de almacenamiento, importaciones y repositorio. Ver su
+[API y limitaciones](almacenamiento.md). El diagrama superior sigue siendo el
+flujo objetivo: ninguna flecha SQLite se conectó todavía al calculador o UA.
+Las flechas JSON → importadores → SQLite sí están implementadas mediante API Python.
+El repositorio guarda resultados y expone snapshots para productores/consumidores
+de prueba. Las flechas calculador ↔ SQLite y SQLite → UA siguen pendientes de integración.
+
+## Estructura restante, todavía no creada
 
 ```text
-almacenamiento/     conexion.py, esquema.sql, repositorio.py, importacion.py
-administracion/    main.py
 servidor_opcua/    main.py, configuracion.py, nodos.py, publicacion.py, requirements.txt
 configuracion/    aplicacion.ejemplo.json, geometria.ejemplo.json
 ```

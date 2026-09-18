@@ -2,6 +2,40 @@
 
 ## Sin versión publicada
 
+### Etapa 2c — resultados y cierre de almacenamiento (2026-09-18)
+
+- Esquema v3: resultados actuales, series completas de 72 y adquisición, con índices.
+- Guardado atómico de resultados/firmas/estado, precisión sin redondeo, validación
+  de versiones geométricas y catálogo, token de revisión y reintentos idempotentes.
+- Adquisición sin cambios separada del cálculo, errores sin borrar último valor.
+- Snapshots completos/incrementales coherentes para el futuro publicador.
+- Migración v1/v2 a v3 con backup, preservando la API histórica v1 → v2.
+- Consola local para crear/migrar, validar/importar JSON y mostrar estado.
+- ADR 002 y documentación de contratos; 70 pruebas offline satisfactorias.
+- Sin integración del calculador con SQLite ni implementación OPC UA en esta etapa.
+
+### Etapa 2b — catálogo y geometrías
+
+- Esquema v2 con tablas de catálogo y geometrías, índices por revisión y unicidad
+  de base-tags activos normalizados con casefold.
+- API Python de validación/importación completa: altas, cambios, inactivaciones,
+  versiones geométricas y discordancias informadas sin rechazo global.
+- Reimportación idéntica sin cambios; rollback de filas y revisión ante fallas.
+- Parser reutilizable desde objeto, sin cambiar estructura ni contenido del JSON.
+- Migración explícita v1 a v2 con backup obligatorio, sin recrear bases existentes.
+- 12 pruebas nuevas, 51 en total; documentación actualizada. Consola administrativa,
+  resultados, snapshots y conexión del calculador a SQLite todavía pendientes.
+
+### Etapa 2a — infraestructura SQLite
+
+- Agregado paquete `almacenamiento` con creación exclusiva, identificación/versión
+  de esquema, conexiones reutilizables y transacciones con rollback.
+- WAL, synchronous FULL, lectura protegida y timeout de bloqueo configurable.
+- Esquema v1 limitado a metadatos; tablas e importadores de negocio siguen pendientes.
+- 13 pruebas SQLite nuevas; 39 pruebas offline en total. No se accedió a iFIX.
+- Documentadas API, límites, cierre, recuperación y futura migración explícita.
+- Ignorados archivos auxiliares SQLite WAL/SHM/journal para no versionar datos locales.
+
 ### Limpieza y organización
 
 - Retiradas las capturas obsoletas `arbol_ifix.json`, `arbol_ifix.txt`, `tags.txt`

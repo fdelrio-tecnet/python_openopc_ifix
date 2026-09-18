@@ -4,9 +4,26 @@
 
 ## Estado
 
-Modelo lógico propuesto para la siguiente etapa. No existe todavía esquema SQL,
-base inicial ni API de almacenamiento. Los nombres siguientes orientan el diseño;
-al implementar deberán documentarse tipos, restricciones, índices y migración.
+Existe [SQLite v3](almacenamiento.md) con todas las tablas listadas más abajo.
+El [repositorio de resultados](repositorio_resultados.md) implementa sus paquetes,
+estado de adquisición y snapshots; su integración con el calculador/UA es pendiente.
+Los importadores incrementan una revisión global por carga con cambios, no por fila.
+
+DDL: [metadatos](../almacenamiento/esquema.sql) y [catálogo/geometrías](../almacenamiento/catalogo.sql).
+`metadatos`: clave TEXT primaria no nula; valor INTEGER no negativo, tipo entero
+comprobado. Valores iniciales: versión 3 y revisión 0.
+
+`tramos`: ID TEXT primario; base/tag de entrada TEXT no nulos, activo INTEGER 0/1,
+revisión INTEGER positiva. `base_tag_clave` guarda `base_tag.casefold()` para el
+índice único parcial de tramos activos; no depende del NOCASE ASCII de SQLite.
+IDs se comparan exactamente tras quitar espacios, igual que en el parser actual.
+
+`geometrias`: tramo_id TEXT primario sin FK, magnitudes REAL positivas, activa 0/1,
+versión/revisión INTEGER positivas y fecha TEXT UTC ISO 8601. SQL comprueba diámetro
+interno positivo; el importador además rechaza booleanos y números no finitos.
+Versiones comienzan en 1 y cambian con valores o activación, incluida inactivación.
+Ambas tablas tienen índice por revisión. No escribir mediante SQL ajeno a la API:
+las validaciones completas, normalización y revisiones son responsabilidad del módulo.
 
 ## Tablas
 
@@ -18,6 +35,14 @@ al implementar deberán documentarse tipos, restricciones, índices y migración
 | `predicciones_linepack` | `tramo_id` | `presiones_json`, `linepacks_json`, `firma_presiones_json`, `geometria_version`, `calculado_en`, `actualizacion_id`, `revision` |
 | `estado_adquisicion` | `tramo_id`, `ciclo` | `ultimo_intento_en`, `ultima_lectura_valida_en`, `estado`, `detalle`, `revision`; ciclo actual o predictivo |
 | `metadatos` | clave | Versión de esquema y contador global de revisiones |
+
+El [DDL de resultados](../almacenamiento/resultados.sql) agrega `catalogo_revision`
+a ambos tipos de resultado y `resultado_revision` al estado de adquisición.
+Resultados: tramo_id TEXT primario con FK, escalares REAL, arrays JSON TEXT,
+versiones/revisiones INTEGER positivas, fecha e ID TEXT. Estado: clave compuesta,
+ciclo/estado TEXT restringidos, fechas/detalle TEXT y revisión INTEGER; última
+lectura válida y resultado_revision pueden ser NULL. Las tres tablas tienen
+índice por revisión. Validación de finitud, longitudes y firmas a cargo de la API.
 
 La geometría admite IDs ausentes del catálogo. No imponer una referencia que
 impida cargarlos. Los resultados solo deben aceptarse para tramos activos con
@@ -60,9 +85,10 @@ adelante la retención de IDs inactivos si el catálogo cambia con frecuencia.
    resultado válido con cero ni con una serie parcial.
 
 Cada paquete incluye `actualizacion_id`. Un reintento idéntico del último paquete
-debe reconocerse sin generar una actualización falsa; reutilizar el mismo ID con
-otro contenido debe rechazarse. Antes de implementar hay que fijar la regla para
-paquetes retrasados y cómo evitar que un reintento antiguo reemplace uno más nuevo.
+se reconoce sin generar una actualización falsa; reutilizar el mismo ID con
+otro contenido se rechaza. Se exige la revisión anterior del resultado y fechas
+crecientes: un paquete retrasado no puede forzar una revisión nueva. Ver
+[ADR 002](decisiones/002-control-paquetes.md) y [API](repositorio_resultados.md).
 No se promete deduplicación histórica ilimitada usando solo una fila por tramo.
 
 ## Revisiones y publicación
@@ -88,7 +114,7 @@ válida sin cambios mantiene viva la adquisición, sin reescribir el array.
 ## Guardado, publicación y consumo
 
 `COMMIT` confirma almacenamiento, no actualización de UA ni adquisición en iFIX.
-La firma del calculador podrá consolidarse al guardar; la publicación será
+La firma queda almacenada con los 72 puntos en el mismo COMMIT; la publicación será
 responsabilidad del servidor. Esto sustituye el criterio actual de 72 respuestas
 Success de OPC DA, únicamente cuando se implemente el nuevo destino.
 
@@ -98,10 +124,11 @@ Un resultado recuperado después de reiniciar conserva sus fechas originales.
 
 ## Compatibilidad y migraciones
 
-Plan: versión explícita del esquema; inicialización de una base nueva diferenciada
-de migración. No recrear una base existente para actualizarla. Procesos con esquema
-incompatible deben fallar con diagnóstico claro antes de escribir.
+Implementado: versión explícita v3, identificación de aplicación, creación exclusiva
+y rechazo de esquema incompatible antes de escribir. La inicialización no migra
+ni recrea una base existente. `migrar_base` acepta v1/v2 sin borrar datos
+y exige backup consistente en una ruta nueva; ver [procedimiento](almacenamiento.md).
 
-Antes de la primera migración se debe definir backup consistente, actualización
-coordinada de procesos, validación posterior y recuperación. Las capacidades SQL
+Antes de migrar deben detenerse los demás procesos y prepararse la recuperación.
+Las capacidades SQL
 usadas deben probarse con la versión SQLite incluida en ambos runtimes Python.
