@@ -46,6 +46,8 @@ pruebas las integran con un cliente falso. `python_scheduler/main.py` solamente
 imprime `Main`; no coordina procesos ni ciclos. Existe infraestructura SQLite con
 esquema v3, catálogo/geometrías, importadores, resultados, snapshots, consola y
 migración con backup. Todavía no hay servidor OPC UA ni coordinador operativo.
+Existe además `servidor_opcua/` con modelo lógico de nodos y preparación pura
+de disponibilidad/valores. No implementa transporte ni escucha en ningún puerto.
 
 La escritura actual del código tiene como destino directo iFIX. En el objetivo,
 el calculador guardará en SQLite y el servidor publicará hacia IGS/iFIX. Mantener
@@ -124,10 +126,20 @@ Las flechas JSON → importadores → SQLite sí están implementadas mediante A
 El repositorio guarda resultados y expone snapshots para productores/consumidores
 de prueba. Las flechas calculador ↔ SQLite y SQLite → UA siguen pendientes de integración.
 
+Etapa 3a implementada, comprobada con productor SQLite temporal:
+
+```text
+Snapshot completo → validación de contexto y vigencia → valores/fechas/estado
+                                                     → adaptador UA (pendiente)
+```
+
+`servidor_opcua/nodos.py` define claves candidatas estables y nombres de negocio;
+`publicacion.py` prepara resultados sin modificar SQLite. Ver [contrato](publicacion_opcua.md).
+
 ## Estructura restante, todavía no creada
 
 ```text
-servidor_opcua/    main.py, configuracion.py, nodos.py, publicacion.py, requirements.txt
+servidor_opcua/    main.py, configuracion.py, adaptador UA, requirements.txt
 configuracion/    aplicacion.ejemplo.json, geometria.ejemplo.json
 ```
 

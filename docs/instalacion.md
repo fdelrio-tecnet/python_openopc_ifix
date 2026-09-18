@@ -8,6 +8,8 @@ El sistema completo todavía no arranca: servidor UA y coordinador están pendie
 Existen [SQLite v3](almacenamiento.md), resultados/importadores y consola de
 administración, sin dependencias externas nuevas. Esta guía distingue requisitos de procedimientos
 ejecutables. No hay un `requirements.txt` del servidor propio todavía.
+La etapa 3a de nodos/disponibilidad también usa solo biblioteca estándar y módulos
+del repositorio; no instala biblioteca UA ni necesita endpoint para sus pruebas.
 
 Destino informado: un equipo Windows Server 2019 Datacenter 1809; todos los
 procesos propios bajo el mismo usuario. No se requiere comunicación HTTP ni pipes.

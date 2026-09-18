@@ -12,13 +12,14 @@ OPC UA propio que publicará los resultados hacia IGS, iFIX y Operations Hub.
 | Parser del JSON compartido | Implementado: tramos directos y en subsistemas, IDs y salidas únicas |
 | Matemática actual y predictiva | Implementada; validaciones de finitud y 72 puntos |
 | Lectura/escritura OPC DA | Implementada en funciones; verificada con cliente falso |
-| Pruebas automatizadas sin iFIX | 70 pruebas satisfactorias, incluidas SQLite y concurrencia multiproceso |
+| Pruebas automatizadas sin iFIX | 85 pruebas satisfactorias, incluidas SQLite, concurrencia y preparación de publicación |
 | Coordinador `python_scheduler/main.py` | Stub; solo imprime `Main` |
 | Infraestructura SQLite | Implementada: esquema v3, transacciones y migración desde v1/v2 con backup |
 | Catálogo y geometrías SQLite | Implementados: importaciones completas mediante API Python, versiones y revisiones |
 | Resultados SQLite | Implementados: paquetes atómicos, adquisición, control de revisiones y snapshots |
 | Consola de administración | Implementada: crear/migrar, validar/importar y consultar |
-| Servidor OPC UA propio | Planificado; todavía no existe |
+| Preparación de publicación | Implementada: nodos lógicos, disponibilidad, vencimiento y redondeo |
+| Servidor OPC UA de red | Pendiente; todavía no hay endpoint ni biblioteca UA |
 | Integración del nuevo flujo con IGS/iFIX | Pendiente |
 
 Las pruebas se ejecutaron con Python 3.12 x64 y se comprobó sintaxis Python 3.9.
@@ -31,6 +32,7 @@ No hay todavía un comando que arranque el sistema completo.
 - [Modelo de datos y consistencia](docs/modelo_datos.md).
 - [API SQLite implementada](docs/almacenamiento.md).
 - [Contrato de resultados y snapshots](docs/repositorio_resultados.md).
+- [Preparación de publicación OPC UA](docs/publicacion_opcua.md).
 - [Configuración e importaciones](docs/configuracion_importaciones.md).
 - [Instalación y entornos](docs/instalacion.md).
 - [Operación y recuperación](docs/operacion.md).
@@ -60,6 +62,9 @@ No está incluido en este repositorio. La ruta de despliegue será configurable.
    - 2b: tablas de catálogo/geometría e importación completa mediante API: completada.
    - 2c: paquetes de resultados, revisiones, snapshots y consola: completada.
 3. Servidor OPC UA con productor de prueba.
+   - 3a: modelo de nodos y disponibilidad sin transporte: completada.
+   - 3b: servidor local, biblioteca UA y prueba productor/cliente: pendiente.
+   - 3c: sondeo incremental, recuperación y validación IGS/AR: pendiente.
 4. Integración del calculador, scheduling, observabilidad y pruebas en iFIX.
 
 Cada etapa debe actualizar sus documentos afectados en la misma entrega.

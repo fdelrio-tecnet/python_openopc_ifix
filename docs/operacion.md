@@ -9,6 +9,8 @@ Existe [almacenamiento SQLite](almacenamiento.md) con importadores de catálogo 
 geometrías, resultados, adquisición, snapshots y consola administrativa. Migrar
 v1/v2 exige backup. No ejecutar `python_scheduler/main.py` esperando servicio: imprime
 `Main` y finaliza. Los scripts manuales existentes pueden escribir en iFIX.
+La preparación de publicación ya evalúa disponibilidad sin red; todavía no hay
+comando de arranque de servidor UA. Ver [etapa 3a](publicacion_opcua.md).
 
 ## Arranque previsto
 
@@ -32,7 +34,9 @@ cliente COM entre hilos ni abrirlo/cerrarlo por cada operación.
 
 Una serie sin cambios recibe una actualización de verificación válida. El servidor
 evalúa vencimientos aunque no haya revisiones nuevas. Umbrales propuestos iniciales:
-2 minutos para actuales y 30 minutos sin verificación predictiva válida.
+2 minutos desde cálculo actual y 30 minutos desde verificación predictiva válida.
+La función de preparación ya implementa estos umbrales configurables e inclusivos;
+falta el proceso periódico que la invoque y aplique calidad al servidor real.
 
 Conservar último valor y fechas, marcándolo como desactualizado/no disponible
 cuando corresponda. Nunca presentar cero inicial como resultado válido.

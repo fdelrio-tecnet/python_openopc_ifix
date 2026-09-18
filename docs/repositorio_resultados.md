@@ -114,8 +114,9 @@ actual es error, pero eso no detecta todos los restores: no persistir el cursor.
 **Snapshot no equivale a valores publicables.** Puede contener cálculos antiguos:
 el futuro publicador debe comprobar tramo/geom activos, versiones coincidentes,
 estado válido asociado a la revisión del resultado y antigüedad de adquisición.
-Debe evaluar vencimiento incluso si no llegan cambios. No se genera calidad UA
-ni se marca como vigente un resultado solo por estar persistido.
+Debe evaluar vencimiento incluso si no llegan cambios. La [etapa 3a](publicacion_opcua.md)
+ya prepara esa disponibilidad interna desde un snapshot completo. No genera calidad
+UA ni marca como vigente un resultado solo por estar persistido.
 
 ## Verificación y límites
 

@@ -2,6 +2,16 @@
 
 ## Sin versión publicada
 
+### Etapa 3a — preparación de publicación (2026-09-18)
+
+- Modelo lógico de tres nodos por tramo, con claves estables candidatas y nombres actuales.
+- Preparación pura de disponibilidad/fechas/valores desde snapshot completo, sin red.
+- Vencimiento configurable, control de contexto, serie íntegra de 72 y aislamiento
+  de errores locales. Redondeo solo para publicación; SQLite conserva precisión.
+- 15 pruebas nuevas; 85 en total. Prueba productor SQLite temporal → preparación.
+- ADR 003 y documentación actualizados. Biblioteca UA, endpoint y pruebas IGS
+  todavía pendientes; no se modificó el calculador ni la base de datos operativa.
+
 ### Etapa 2c — resultados y cierre de almacenamiento (2026-09-18)
 
 - Esquema v3: resultados actuales, series completas de 72 y adquisición, con índices.
